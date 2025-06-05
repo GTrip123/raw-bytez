@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Binary File Dumper</title>
+<style>
+  body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
+  #output { white-space: pre-wrap; max-height: 400px; overflow: auto; background: #222; padding: 10px; border-radius: 5px; }
+  input[type="file"], button { margin-bottom: 15px; padding: 8px 15px; font-size: 16px; cursor: pointer; }
+  button { margin-right: 10px; }
+</style>
+</head>
+<body>
+
+<h2>Binary File Dumper</h2>
+<input type="file" id="fileInput" />
+<br />
+<button id="dumpBtn">Convert to Bits</button>
+<button id="downloadBtn" disabled>Download Output</button>
+
+<pre id="output"></pre>
+
+<script>
+  const fileInput = document.getElementById('fileInput');
+  const dumpBtn = document.getElementById('dumpBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const output = document.getElementById('output');
+
+  let currentOutput = '';
+
+  dumpBtn.addEventListener('click', () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      alert("Please select a file first!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const bytes = new Uint8Array(e.target.result);
+      let result = '';
+      for (let i = 0; i < bytes.length; i++) {
+        result += bytes[i].toString(2).padStart(8, '0') + ' ';
+        if ((i + 1) % 16 === 0) result += '\n';
+      }
+      currentOutput = result.trim();
+      output.textContent = currentOutput;
+      downloadBtn.disabled = false;
+    };
+
+    reader.onerror = function() {
+      alert("Failed to read file!");
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    if (!currentOutput) return;
+
+    const blob = new Blob([currentOutput], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'binary_dump.txt';
+    document.body.appendChild(a);
+    a.click();
+
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
+  });
+</script>
+
+</body>
+</html>
