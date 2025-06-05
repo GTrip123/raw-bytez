@@ -6,9 +6,10 @@
 <title>Binary File Dumper</title>
 <style>
   body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
-  #output { white-space: pre-wrap; max-height: 400px; overflow: auto; background: #222; padding: 10px; border-radius: 5px; }
+  #output { white-space: pre-wrap; max-height: 400px; overflow: auto; background: #222; padding: 10px; border-radius: 5px; margin-top: 15px; display: none; }
   input[type="file"], button { margin-bottom: 15px; padding: 8px 15px; font-size: 16px; cursor: pointer; }
   button { margin-right: 10px; }
+  #fileSize { display: inline-block; margin-left: 10px; font-weight: normal; color: #ccc; }
 </style>
 </head>
 <body>
@@ -18,6 +19,8 @@
 <br />
 <button id="dumpBtn">Convert to Bits</button>
 <button id="downloadBtn" disabled>Download Output</button>
+<button id="showOutputBtn" disabled>Show Output</button>
+<span id="fileSize"></span>
 
 <pre id="output"></pre>
 
@@ -25,9 +28,12 @@
   const fileInput = document.getElementById('fileInput');
   const dumpBtn = document.getElementById('dumpBtn');
   const downloadBtn = document.getElementById('downloadBtn');
+  const showOutputBtn = document.getElementById('showOutputBtn');
   const output = document.getElementById('output');
+  const fileSizeSpan = document.getElementById('fileSize');
 
   let currentOutput = '';
+  let currentFileSize = 0;
 
   dumpBtn.addEventListener('click', () => {
     const file = fileInput.files[0];
@@ -35,6 +41,11 @@
       alert("Please select a file first!");
       return;
     }
+
+    currentFileSize = file.size;
+    fileSizeSpan.textContent = `(File size: ${currentFileSize.toLocaleString()} bytes)`;
+    output.style.display = 'none'; // Hide output on new convert
+    showOutputBtn.disabled = true; // Disable show button while loading
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -45,15 +56,24 @@
         if ((i + 1) % 16 === 0) result += '\n';
       }
       currentOutput = result.trim();
-      output.textContent = currentOutput;
       downloadBtn.disabled = false;
+      showOutputBtn.disabled = false;
     };
 
     reader.onerror = function() {
       alert("Failed to read file!");
+      downloadBtn.disabled = true;
+      showOutputBtn.disabled = true;
+      fileSizeSpan.textContent = '';
     };
 
     reader.readAsArrayBuffer(file);
+  });
+
+  showOutputBtn.addEventListener('click', () => {
+    if (!currentOutput) return;
+    output.textContent = currentOutput;
+    output.style.display = 'block';
   });
 
   downloadBtn.addEventListener('click', () => {
@@ -68,7 +88,6 @@
     document.body.appendChild(a);
     a.click();
 
-    // Clean up
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
